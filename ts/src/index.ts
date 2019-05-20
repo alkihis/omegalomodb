@@ -35,36 +35,54 @@ route.set(
         if (req.body.keys) {
             const keys_tuples = req.body.keys as [string, string][];
     
-            let keys_to_fetch: string[] = [];
-            let keys_to_find: { [findedKey: string]: string } = {};
+            let keys_to_fetch: Set<string> = new Set;
+            let keys_to_find: { [findedKey: string]: Set<string> } = {};
             for (const [key1, key2] of keys_tuples) {
                 if (md5(key1) >= md5(key2)) {
-                    keys_to_fetch.push(key1);
-                    keys_to_find[key1] = key2;
+                    keys_to_fetch.add(key1);
+
+                    if (key1 in keys_to_find) {
+                        keys_to_find[key1].add(key2);
+                    }
+                    else {
+                        keys_to_find[key1] = new Set([key2]);
+                    }
                 }
                 else {
-                    keys_to_fetch.push(key2);
-                    keys_to_find[key2] = key1;
+                    keys_to_fetch.add(key2);
+
+                    if (key2 in keys_to_find) {
+                        keys_to_find[key2].add(key1);
+                    }
+                    else {
+                        keys_to_find[key2] = new Set([key1]);
+                    }
                 }
             }
 
             container.to_find = keys_to_find;
 
-            return keys_to_fetch;
+            return [...keys_to_fetch];
         }
     }, 
     (_, res, data, container) => {
-        const keys_to_find = container.to_find;
+        const keys_to_find = container.to_find as { [findedKey: string]: Set<string> };
 
         const resp: { [key1_key2: string]: string[] } = {};
 
         // Recherche si chaque clé de data comprend la clé correpondante
         for (const d of data) {
             const id = d.id;
-            const dta = d.data;
+            const dta = d.data as { [id2: string]: string[] };
 
-            const id_to_find = keys_to_find[id];
-            resp[`${id}~${id_to_find}`] = (id_to_find in dta ? dta[id_to_find] : []);
+            const ids_to_find = keys_to_find[id];
+
+            // Recherche des couples id , ids_to_find[i]
+            for (const i of ids_to_find) {
+                if (i in dta) {
+                    resp[`${id}~${i}`] = dta[i];
+                }
+            }
         }
 
         res.json({ request: resp });
