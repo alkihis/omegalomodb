@@ -40,7 +40,7 @@ route.set(
 );
 
 route.set(
-    "POST", "/bulk_couple/:specie",
+    "POST", "/bulk_couple",
     (req, _, container) => {
         if (req.body.keys) {
             const keys_tuples = req.body.keys as [string, string][];

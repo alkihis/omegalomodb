@@ -21,7 +21,7 @@ route.set('POST', '/bulk/:specie', (req, res) => req.body.keys ? req.body.keys :
     console.log(error);
     res.status(500).json({ error: "Database error" });
 }, "id_map");
-route.set("POST", "/bulk_couple/:specie", (req, _, container) => {
+route.set("POST", "/bulk_couple", (req, _, container) => {
     if (req.body.keys) {
         const keys_tuples = req.body.keys;
         let keys_to_fetch = new Set;
