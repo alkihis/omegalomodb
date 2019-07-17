@@ -4,21 +4,19 @@ import program = require('commander');
 
 program
   .version('0.1.0')
-  .option('-d, --database <databaseUrl>', 'Database URL', "http://localhost")
-  .option('-p, --port <portNum>', 'Port Listening Number', parseInt, 5984)
+  .option('-d, --database <databaseUrl>', 'Database URL', "http://localhost:5984")
+  .option('-p, --port <portNum>', 'Port Listening Number', parseInt, 3280)
 .parse(process.argv);
 
-const ENDPOINTS: EndpointAccepters = {
-    'id_map': (key: string) => true,
-    'interactors': (key: string) => true
-};
+const ENDPOINTS: EndpointAccepters = {};
 
-const DB = `${program.database}:${program.port}`;
+const DB = `${program.database}`;
 
 const route = new Routes(ENDPOINTS, DB);
 
 route.set('GET', '/handshake', () => undefined, (_, res) => res.json({ handshake: true }));
 
+////// FOR COMPATIBILITY
 route.set(
     'POST', '/bulk', 
     (req, res) => req.body.keys ? req.body.keys : void res.status(400).json({ error: "Unwell-formed request" }), 
@@ -26,11 +24,23 @@ route.set(
     (_, res, error) => { 
         console.log(error); 
         res.status(500).json({ error: "Database error" }); 
-    }
+    },
+    "id_map"
 );
 
 route.set(
-    "POST", "/bulk_couple",
+    'POST', '/bulk/:specie', 
+    (req, res) => req.body.keys ? req.body.keys : void res.status(400).json({ error: "Unwell-formed request" }), 
+    (_, res, data) => res.json({ request: data }), 
+    (_, res, error) => { 
+        console.log(error); 
+        res.status(500).json({ error: "Database error" }); 
+    },
+    "id_map"
+);
+
+route.set(
+    "POST", "/bulk_couple/:specie",
     (req, _, container) => {
         if (req.body.keys) {
             const keys_tuples = req.body.keys as [string, string][];
@@ -65,15 +75,14 @@ route.set(
             return [...keys_to_fetch];
         }
     }, 
-    (_, res, data, container) => {
+    (_, res, data: { [id: string]: { data: { [linkedId: string]: string[] } } }, container) => {
         const keys_to_find = container.to_find as { [findedKey: string]: Set<string> };
 
         const resp: { [key1_key2: string]: string[] } = {};
 
         // Recherche si chaque clé de data comprend la clé correpondante
-        for (const d of data) {
-            const id = d.id;
-            const dta = d.data as { [id2: string]: string[] };
+        for (const id of Object.keys(data)) {
+            const dta = data[id].data as { [id2: string]: string[] };
 
             const ids_to_find = keys_to_find[id];
 
@@ -90,9 +99,21 @@ route.set(
     (_, res, error) => { 
         console.log(error); 
         res.status(500).json({ error: "Database error" }); 
-    }
+    },
+    "interactors"
 );
 
-route.listen(3280, () => {
+route.set(
+    'POST', '/uniprot', 
+    (req, res) => req.body.keys ? req.body.keys : void res.status(400).json({ error: "Unwell-formed request" }), 
+    (_, res, data) => res.json({ request: data }), 
+    (_, res, error) => { 
+        console.log(error); 
+        res.status(500).json({ error: "Database error" }); 
+    },
+    'uniprot'
+);
+
+route.listen(program.port, () => {
     console.log("App listening on port 3280.");
 });
