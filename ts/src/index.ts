@@ -1,6 +1,6 @@
 import { EndpointAccepters, Routes } from "couchdb-dispatcher";
-import * as md5 from "md5";
-import program = require('commander');
+import md5 from "md5";
+import program from 'commander';
 
 program
   .version('0.1.0')
@@ -10,38 +10,27 @@ program
 
 const ENDPOINTS: EndpointAccepters = {};
 
-const DB = `${program.database}`;
+const DB = program.database;
 
 const route = new Routes(ENDPOINTS, DB);
 
-route.set('GET', '/handshake', () => undefined, (_, res) => res.json({ handshake: true }));
-
-////// FOR COMPATIBILITY
-route.set(
-    'POST', '/bulk', 
-    (req, res) => req.body.keys ? req.body.keys : void res.status(400).json({ error: "Unwell-formed request" }), 
-    (_, res, data) => res.json({ request: data }), 
-    (_, res, error) => { 
+route.set({
+    method: 'POST',
+    route: ['/bulk/:specie', '/bulk'],
+    endpoint: 'id_map',
+    get_keys: (req, res) => req.body.keys ? req.body.keys : void res.status(400).json({ error: "Unwell-formed request" }),
+    post_data: (_, res, data) => res.json({ request: data }),
+    on_error: (_, res, error) => { 
         console.log(error); 
         res.status(500).json({ error: "Database error" }); 
-    },
-    "id_map"
-);
+    }
+});
 
-route.set(
-    'POST', '/bulk/:specie', 
-    (req, res) => req.body.keys ? req.body.keys : void res.status(400).json({ error: "Unwell-formed request" }), 
-    (_, res, data) => res.json({ request: data }), 
-    (_, res, error) => { 
-        console.log(error); 
-        res.status(500).json({ error: "Database error" }); 
-    },
-    "id_map"
-);
-
-route.set(
-    "POST", "/bulk_couple",
-    (req, _, container) => {
+route.set({
+    method: 'POST',
+    route: '/bulk_couple',
+    endpoint: "interactors",
+    get_keys: (req, _, container) => {
         if (req.body.keys) {
             const keys_tuples = req.body.keys as [string, string][];
     
@@ -74,8 +63,8 @@ route.set(
 
             return [...keys_to_fetch];
         }
-    }, 
-    (_, res, data: { [id: string]: { data: { [linkedId: string]: string[] } } }, container) => {
+    },
+    post_data: (_, res, data: { [id: string]: { data: { [linkedId: string]: string[] } } }, container) => {
         const keys_to_find = container.to_find as { [findedKey: string]: Set<string> };
 
         const resp: { [key1_key2: string]: string[] } = {};
@@ -96,24 +85,24 @@ route.set(
 
         res.json({ request: resp });
     },
-    (_, res, error) => { 
+    on_error: (_, res, error) => { 
         console.log(error); 
         res.status(500).json({ error: "Database error" }); 
-    },
-    "interactors"
-);
+    }
+});
 
-route.set(
-    'POST', '/uniprot', 
-    (req, res) => req.body.keys ? req.body.keys : void res.status(400).json({ error: "Unwell-formed request" }), 
-    (_, res, data) => res.json({ request: data }), 
-    (_, res, error) => { 
+route.set({
+    method: 'POST',
+    route: '/uniprot',
+    endpoint: 'uniprot',
+    get_keys: (req, res) => req.body.keys ? req.body.keys : void res.status(400).json({ error: "Unwell-formed request" }),
+    post_data: (_, res, data) => res.json({ request: data }),
+    on_error: (_, res, error) => { 
         console.log(error); 
         res.status(500).json({ error: "Database error" }); 
-    },
-    'uniprot'
-);
+    }
+});
 
 route.listen(program.port, () => {
-    console.log("App listening on port 3280.");
+    console.log("App listening on port "+ program.port +".");
 });
