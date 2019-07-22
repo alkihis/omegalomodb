@@ -8,7 +8,7 @@
 
 ```bash
 git clone https://github.com/alkihis/omegalomodb.git
-cd omega-topology-uniprot
+cd omegalomodb
 npm i
 ```
 
@@ -42,9 +42,9 @@ Fetch partners of given IDs
 ```json
 {
     "request": {
-        "givenId": {
+        "givenId1": {
             "partners": ["interactorId", "interactor2Id", ...]
-        };
+        },
         ...
     }
 }
@@ -53,7 +53,7 @@ Fetch partners of given IDs
 ### POST /bulk_couple
 Fetch MI Tab lines of desired couples.
 
-Returns an array inside a JSON-formatted body, containing `UniprotProtein` objects.
+Returns object containing, as key, a string `id1OfCouple~id2OfCouple` linked to an array of string (raw MI Tab lines).
 
 - `@url` POST http://<µ-service-url>/bulk_couple
 - `@body` `{"keys":[ ["id1couple1", "id2couple1"], ["id1couple2", "id2couple2"], ... ]}`
@@ -85,4 +85,13 @@ Fetch the full UniProt API JSON object according to accession numbers.
 
 **Warning**: The UniProt ID is **NOT** the accession number !
 The accession number is *INSIDE* the UniProt object.
+
+
+## Add endpoint
+
+This program use `couchdb-dispatcher` to make Couch requests and make the HTTP server.
+
+Please read this package documentation to add a endpoint.
+
+A `Routes` object is already defined, you just need to call `route.set()` method with your desired arguments.
 

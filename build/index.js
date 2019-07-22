@@ -9,7 +9,7 @@ const commander_1 = __importDefault(require("commander"));
 commander_1.default
     .version('0.1.0')
     .option('-d, --database <databaseUrl>', 'Database URL', "http://localhost:5984")
-    .option('-p, --port <portNum>', 'Port Listening Number', parseInt, 3280)
+    .option('-p, --port <portNum>', 'Port Listening Number', Number, 3280)
     .parse(process.argv);
 const ENDPOINTS = {};
 const DB = commander_1.default.database;
@@ -31,25 +31,26 @@ route.set({
     endpoint: "interactors",
     get_keys: (req, _, container) => {
         if (req.body.keys) {
+            // Récupère les tuples, détermine quelles clés sont à rechercher
             const keys_tuples = req.body.keys;
             let keys_to_fetch = new Set;
             let keys_to_find = {};
             for (const [key1, key2] of keys_tuples) {
-                if (md5_1.default(key1) >= md5_1.default(key2)) {
-                    keys_to_fetch.add(key1);
-                    if (key1 in keys_to_find) {
-                        keys_to_find[key1].add(key2);
-                    }
-                    else {
-                        keys_to_find[key1] = new Set([key2]);
-                    }
+                // La clé du couple à chercher est déterminée par sa somme MD5
+                if (key1 in keys_to_find) {
+                    // Si son fetch est déjà demandé
+                    keys_to_fetch[key1].add(key2);
+                }
+                else if (key2 in keys_to_find) {
+                    keys_to_fetch[key2].add(key1);
                 }
                 else {
-                    keys_to_fetch.add(key2);
-                    if (key2 in keys_to_find) {
-                        keys_to_find[key2].add(key1);
+                    if (md5_1.default(key1) >= md5_1.default(key2)) {
+                        keys_to_fetch.add(key1);
+                        keys_to_find[key1] = new Set([key2]);
                     }
                     else {
+                        keys_to_fetch.add(key2);
                         keys_to_find[key2] = new Set([key1]);
                     }
                 }
@@ -75,7 +76,7 @@ route.set({
         res.json({ request: resp });
     },
     on_error: (_, res, error) => {
-        console.log(error);
+        console.error(error);
         res.status(500).json({ error: "Database error" });
     }
 });
@@ -86,7 +87,7 @@ route.set({
     get_keys: (req, res) => req.body.keys ? req.body.keys : void res.status(400).json({ error: "Unwell-formed request" }),
     post_data: (_, res, data) => res.json({ request: data }),
     on_error: (_, res, error) => {
-        console.log(error);
+        console.error(error);
         res.status(500).json({ error: "Database error" });
     }
 });
