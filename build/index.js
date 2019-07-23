@@ -39,10 +39,10 @@ route.set({
                 // La clé du couple à chercher est déterminée par sa somme MD5
                 if (key1 in keys_to_find) {
                     // Si son fetch est déjà demandé
-                    keys_to_fetch[key1].add(key2);
+                    keys_to_find[key1].add(key2);
                 }
                 else if (key2 in keys_to_find) {
-                    keys_to_fetch[key2].add(key1);
+                    keys_to_find[key2].add(key1);
                 }
                 else {
                     if (md5_1.default(key1) >= md5_1.default(key2)) {
