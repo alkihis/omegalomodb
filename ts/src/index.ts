@@ -42,9 +42,11 @@ route.set({
                 if (key1 in keys_to_find) {
                     // Si son fetch est déjà demandé
                     keys_to_find[key1].add(key2);
+                    keys_to_fetch.add(key1);
                 }
                 else if (key2 in keys_to_find) {
                     keys_to_find[key2].add(key1);
+                    keys_to_fetch.add(key2);
                 }
                 else {
                     if (md5(key1) >= md5(key2)) {
